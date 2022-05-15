@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+
+	"github.com/google/go-querystring/query"
 )
 
 type Order struct {
@@ -90,32 +92,40 @@ const (
 	SplitFee
 )
 
-// type Metadata struct {
-// 	Asset  MetadataAsset `json:"asset"`
-// 	Schema string        `json:"schema"`
-// }
+const (
+	OrderByCreateDate = "created_date"
+	OrderByPrice      = "eth_price"
 
-// type MetadataAsset struct {
-// 	ID      string `json:"id"`
-// 	Address string `json:"address"`
-// }
+	OrderDirectionAscend  = "asc"
+	OrderDirectionDescend = "desc"
+)
 
-func (o Opensea) GetOrders(assetContractAddress string, listedAfter int64) ([]*Order, error) {
-	ctx := context.TODO()
-	return o.GetOrdersWithContext(ctx, assetContractAddress, listedAfter)
+type GetOrderOpts struct {
+	AssetContractAddress string   `json:"asset_contract_address,omitempty"`
+	ListedAfter          string   `json:"listed_after,omitempty"`
+	ListedBefore         string   `json:"listed_before,omitempty"`
+	OrderBy              string   `json:"order_by,omitempty"`
+	OrderDirection       string   `json:"order_direction,omitempty"`
+	TokenId              string   `json:"token_id,omitempty"`
+	TokenIds             []string `json:"token_ids,omitempty"`
+	Limit                int32    `json:"limit,omitempty"`
+	Offset               int32    `json:"offset,omitempty"`
 }
 
-func (o Opensea) GetOrdersWithContext(ctx context.Context, assetContractAddress string, listedAfter int64) (orders []*Order, err error) {
-	offset := 0
-	limit := 100
+func (o Opensea) GetOrders(opt GetOrderOpts) ([]*Order, error) {
+	return o.GetOrdersWithContext(context.TODO(), opt)
+}
 
-	q := url.Values{}
-	q.Set("asset_contract_address", assetContractAddress)
-	q.Set("listed_after", fmt.Sprintf("%d", listedAfter))
-	q.Set("limit", fmt.Sprintf("%d", limit))
-	q.Set("order_by", "created_date")
-	q.Set("order_direction", "asc")
+func (o Opensea) GetOrdersWithContext(ctx context.Context, opt GetOrderOpts) (orders []*Order, err error) {
+	if opt.Limit == 0 {
+		opt.Limit = 100
+	}
+	offset := int32(0)
 
+	q, err := query.Values(opt)
+	if err != nil {
+		return nil, err
+	}
 	orders = []*Order{}
 
 	for true {
@@ -137,11 +147,129 @@ func (o Opensea) GetOrdersWithContext(ctx context.Context, assetContractAddress 
 		}
 		orders = append(orders, out.Orders...)
 
-		if len(out.Orders) < limit {
+		if int32(len(out.Orders)) < opt.Limit {
 			break
 		}
-		offset += limit
+		offset += opt.Limit
 	}
 
 	return
+}
+
+type GetOfferOpts struct {
+	AssetContractAddress string `json:"asset_contract_address,omitempty"`
+	TokenId              string `json:"token_id,omitempty"`
+	// max 50
+	Limit int `json:"limit,omitempty"`
+}
+
+type GetOfferResponse struct {
+	Offers []Offers `json:"offers"`
+}
+
+type Metadata struct {
+	Asset struct {
+		ID      string `json:"id"`
+		Address string `json:"address"`
+	} `json:"asset"`
+	Schema string `json:"schema"`
+}
+
+type Maker struct {
+	User          User   `json:"user"`
+	ProfileImgURL string `json:"profile_img_url"`
+	Address       string `json:"address"`
+	Config        string `json:"config"`
+}
+type Taker struct {
+	User          User   `json:"user"`
+	ProfileImgURL string `json:"profile_img_url"`
+	Address       string `json:"address"`
+	Config        string `json:"config"`
+}
+
+type FeeRecipient struct {
+	User          User   `json:"user"`
+	ProfileImgURL string `json:"profile_img_url"`
+	Address       string `json:"address"`
+	Config        string `json:"config"`
+}
+
+type PaymentTokenContract struct {
+	ID       int         `json:"id"`
+	Symbol   string      `json:"symbol"`
+	Address  string      `json:"address"`
+	ImageURL string      `json:"image_url"`
+	Name     interface{} `json:"name"`
+	Decimals int         `json:"decimals"`
+	EthPrice string      `json:"eth_price"`
+	UsdPrice interface{} `json:"usd_price"`
+}
+
+type Offers struct {
+	CreatedDate          string               `json:"created_date"`
+	ClosingDate          interface{}          `json:"closing_date"`
+	ClosingExtendable    bool                 `json:"closing_extendable"`
+	ExpirationTime       int                  `json:"expiration_time"`
+	ListingTime          int                  `json:"listing_time"`
+	OrderHash            string               `json:"order_hash"`
+	Metadata             Metadata             `json:"metadata"`
+	Exchange             string               `json:"exchange"`
+	Maker                Maker                `json:"maker"`
+	Taker                Taker                `json:"taker"`
+	CurrentPrice         string               `json:"current_price"`
+	CurrentBounty        string               `json:"current_bounty"`
+	BountyMultiple       string               `json:"bounty_multiple"`
+	MakerRelayerFee      string               `json:"maker_relayer_fee"`
+	TakerRelayerFee      string               `json:"taker_relayer_fee"`
+	MakerProtocolFee     string               `json:"maker_protocol_fee"`
+	TakerProtocolFee     string               `json:"taker_protocol_fee"`
+	MakerReferrerFee     string               `json:"maker_referrer_fee"`
+	FeeRecipient         FeeRecipient         `json:"fee_recipient"`
+	FeeMethod            int                  `json:"fee_method"`
+	Side                 int                  `json:"side"`
+	SaleKind             int                  `json:"sale_kind"`
+	Target               string               `json:"target"`
+	HowToCall            int                  `json:"how_to_call"`
+	Calldata             string               `json:"calldata"`
+	ReplacementPattern   string               `json:"replacement_pattern"`
+	StaticTarget         string               `json:"static_target"`
+	StaticExtradata      string               `json:"static_extradata"`
+	PaymentToken         string               `json:"payment_token"`
+	PaymentTokenContract PaymentTokenContract `json:"payment_token_contract"`
+	BasePrice            string               `json:"base_price"`
+	Extra                string               `json:"extra"`
+	Quantity             string               `json:"quantity"`
+	Salt                 string               `json:"salt"`
+	V                    int                  `json:"v"`
+	R                    string               `json:"r"`
+	S                    string               `json:"s"`
+	ApprovedOnChain      bool                 `json:"approved_on_chain"`
+	Cancelled            bool                 `json:"cancelled"`
+	Finalized            bool                 `json:"finalized"`
+	MarkedInvalid        bool                 `json:"marked_invalid"`
+	PrefixedHash         string               `json:"prefixed_hash"`
+}
+
+func (o Opensea) GetOffersWithContext(ctx context.Context, opt GetOfferOpts) (*GetOfferResponse, error) {
+	if opt.Limit == 0 {
+		opt.Limit = 50
+	}
+
+	q := url.Values{}
+	q.Set("limit", fmt.Sprintf("%d", opt.Limit))
+	var offers = &GetOfferResponse{}
+
+	// https://api.opensea.io/api/v1/asset/{asset_contract_address}/{token_id}/offers
+	path := fmt.Sprintf("/api/v1/asset/%s/%s/offers", opt.AssetContractAddress, opt.TokenId)
+	b, err := o.getPath(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(b, offers)
+	if err != nil {
+		return nil, err
+	}
+	return offers, nil
 }
