@@ -1,6 +1,6 @@
 package opensea
 
-type Asset struct {
+type DetailedAsset struct {
 	TokenID              string         `json:"token_id"`
 	NumSales             int64          `json:"num_sales"`
 	BackgroundColor      string         `json:"background_color"`

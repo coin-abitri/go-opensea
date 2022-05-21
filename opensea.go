@@ -45,18 +45,18 @@ func NewOpenseaRinkeby(apiKey string) (*Opensea, error) {
 	return o, nil
 }
 
-func (o Opensea) GetSingleAsset(assetContractAddress string, tokenID *big.Int) (*Asset, error) {
+func (o Opensea) GetSingleAsset(assetContractAddress string, tokenID *big.Int) (*DetailedAsset, error) {
 	ctx := context.TODO()
 	return o.GetSingleAssetWithContext(ctx, assetContractAddress, tokenID)
 }
 
-func (o Opensea) GetSingleAssetWithContext(ctx context.Context, assetContractAddress string, tokenID *big.Int) (*Asset, error) {
+func (o Opensea) GetSingleAssetWithContext(ctx context.Context, assetContractAddress string, tokenID *big.Int) (*DetailedAsset, error) {
 	path := fmt.Sprintf("/api/v1/asset/%s/%s", assetContractAddress, tokenID.String())
 	b, err := o.getPath(ctx, path)
 	if err != nil {
 		return nil, err
 	}
-	ret := new(Asset)
+	ret := new(DetailedAsset)
 	return ret, json.Unmarshal(b, ret)
 }
 

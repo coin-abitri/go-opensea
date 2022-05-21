@@ -12,7 +12,7 @@ type Event struct {
 	ID                  int64               `json:"id"`
 	Transaction         *Transaction        `json:"transaction"`
 	PaymentToken        *PaymentToken       `json:"payment_token"`
-	Asset               *Asset              `json:"asset"`
+	Asset               *DetailedAsset      `json:"asset"`
 	AssetBundle         *AssetBundle        `json:"asset_bundle"`
 	WinnerAccount       *Account            `json:"winner_account"`
 	FromAccount         *Account            `json:"from_account"`
@@ -76,15 +76,15 @@ type Transaction struct {
 }
 
 type AssetBundle struct {
-	Maker         *Account       `json:"maker"`
-	Slug          string         `json:"slug"`
-	Assets        []*Asset       `json:"assets"`
-	Name          string         `json:"name"`
-	Description   string         `json:"description"`
-	ExternalLink  string         `json:"external_link"`
-	AssetContract *AssetContract `json:"asset_contract"`
-	Permalink     string         `json:"permalink"`
-	SellOrders    interface{}    `json:"sell_orders"`
+	Maker         *Account         `json:"maker"`
+	Slug          string           `json:"slug"`
+	Assets        []*DetailedAsset `json:"assets"`
+	Name          string           `json:"name"`
+	Description   string           `json:"description"`
+	ExternalLink  string           `json:"external_link"`
+	AssetContract *AssetContract   `json:"asset_contract"`
+	Permalink     string           `json:"permalink"`
+	SellOrders    interface{}      `json:"sell_orders"`
 }
 
 // DevFeePaymentEvent is fee transfer event from OpenSea to Dev, It appears to be running in bulk on a regular basis.
